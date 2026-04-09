@@ -1,7 +1,7 @@
 import datetime
 
 from django.core.exceptions import ValidationError
-from django.db.models import Exists, OuterRef
+from django.db.models import Count, Exists, OuterRef
 
 from ..errors import (INVALID_PARAMETERS, CONFERENCE_NOT_FOUND,
                       MISSING_PARAMETERS, PMError)
@@ -49,6 +49,7 @@ class ConferencesView(GenericView):
                 has_warnings=Exists(
                     Issue.objects.filter(conference=OuterRef('pk'), type='w', is_active=True)
                 ),
+                participants_count=Count('participants', distinct=True),
             )
         except ValidationError:
             raise PMError(status=400, app_error=INVALID_PARAMETERS)
@@ -56,7 +57,7 @@ class ConferencesView(GenericView):
         return JSONHttpResponse(
             content=paginate_and_serialize(
                 request, objs,
-                properties=['has_errors', 'has_warnings'],
+                properties=['has_errors', 'has_warnings', 'participants_count'],
             ),
         )
 
